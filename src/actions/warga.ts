@@ -67,18 +67,6 @@ export async function tambahWargaAction(
   );
   if (validationError) return validationError;
 
-  const wargaLama = await getWargaById(id);
-  if (!wargaLama) {
-    return { error: 'Data warga tidak ditemukan.' };
-  }
-
-  if (
-    session.role === 'RT' &&
-    wargaLama.asal_rt_domisili !== session.rt_dikelola
-  ) {
-    return { error: 'Anda tidak memiliki akses untuk mengubah data ini.' };
-  }
-
   const supabase = createServerSupabaseClient();
 
   const payload = {
@@ -93,7 +81,6 @@ export async function tambahWargaAction(
     status_perkawinan: str(formData, 'status_perkawinan'),
     status_kepemilikan_rumah: str(formData, 'status_kepemilikan_rumah'),
     status_penerimaan_bantuan: str(formData, 'status_penerimaan_bantuan'),
-    jenis_bpjs_kesehatan: str(formData, 'jenis_bpjs_kesehatan'),
     agama,
   };
 
@@ -167,7 +154,6 @@ export async function perbaruiWargaAction(
     status_perkawinan:           str(formData, 'status_perkawinan'),
     status_kepemilikan_rumah:    str(formData, 'status_kepemilikan_rumah'),
     status_penerimaan_bantuan:   str(formData, 'status_penerimaan_bantuan'),
-    jenis_bpjs_kesehatan:        str(formData, 'jenis_bpjs_kesehatan'),
     agama,
   };
 

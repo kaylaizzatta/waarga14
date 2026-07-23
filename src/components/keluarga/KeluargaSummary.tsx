@@ -64,14 +64,6 @@ export default function KeluargaSummary({ summary }: KeluargaSummaryProps) {
         iconBgClass="bg-amber-50"
         iconColorClass="text-amber-600"
       />
-
-      <StatCard
-        title="Grup Ambigu"
-        value={summary.grupAmbigu}
-        icon={<Users className="h-5 w-5" />}
-        iconBgClass="bg-rose-50"
-        iconColorClass="text-rose-600"
-      />
     </div>
   );
 }

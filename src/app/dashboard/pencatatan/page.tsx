@@ -2,50 +2,90 @@ import Link from 'next/link';
  
 const ACTIONS = [
   {
-    id:          'tambah',
-    href:        '/dashboard/pencatatan/tambah',
-    title:       'Tambah Warga',
-    description: 'Menambahkan data warga baru ke dalam sistem.',
+    id: 'keluarga',
+    href: '/dashboard/pencatatan/keluarga',
+    title: 'Tambah Keluarga',
+    description:
+      'Mendaftarkan data keluarga baru sebagai dasar pencatatan warga.',
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+      <svg
+        className="w-6 h-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 12.75 10.5 4.5a2.25 2.25 0 0 1 3 0l8.25 8.25M4.5 10.5v8.25A2.25 2.25 0 0 0 6.75 21h10.5a2.25 2.25 0 0 0 2.25-2.25V10.5"
+        />
       </svg>
     ),
   },
   {
-    id:          'perbarui',
-    href:        '/dashboard/data-warga',
-    title:       'Perbarui Data Warga',
-    description: 'Akses data warga untuk mencari, melihat, dan memperbarui informasi warga.',
+    id: 'tambah',
+    href: '/dashboard/pencatatan/tambah',
+    title: 'Tambah Warga',
+    description:
+      'Menambahkan anggota warga ke dalam keluarga yang telah terdaftar.',
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+      <svg
+        className="w-6 h-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
+        />
       </svg>
     ),
   },
   {
-    id:          'riwayat',
-    href:        '/dashboard/pencatatan/riwayat',
-    title:       'Riwayat Perubahan',
-    description: 'Menampilkan aktivitas perubahan data warga yang dilakukan oleh pengurus.',
+    id: 'riwayat',
+    href: '/dashboard/pencatatan/riwayat',
+    title: 'Riwayat Perubahan',
+    description:
+      'Melihat seluruh aktivitas perubahan data warga maupun keluarga.',
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      <svg
+        className="w-6 h-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+        />
       </svg>
     ),
   },
   {
-    id:          'validasi',
-    href:        '/dashboard/pencatatan/validasi',
-    title:       'Validasi & Kualitas Data',
-    description: 'Membantu menemukan data warga yang belum lengkap atau memerlukan pembaruan.',
+    id: 'validasi',
+    href: '/dashboard/pencatatan/validasi',
+    title: 'Validasi Data',
+    description:
+      'Memeriksa kelengkapan dan konsistensi data keluarga serta warga.',
     icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+      <svg
+        className="w-6 h-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
+        />
       </svg>
     ),
   },

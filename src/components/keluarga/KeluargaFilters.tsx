@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import type { Role } from '@/lib/types';
-import type { KeluargaFilterOption } from '@/lib/keluarga-service';
 import {
   buildKeluargaURL,
   type KeluargaURLParams,
@@ -12,8 +11,8 @@ import {
 interface KeluargaFiltersProps {
   role: Role;
   rtLabel: string;
-  rtOptions: KeluargaFilterOption[];
-  statusOptions: KeluargaFilterOption[];
+  rtOptions: string[];
+  statusOptions: string[];
   urlParams: KeluargaURLParams;
 }
 
@@ -104,11 +103,11 @@ export default function KeluargaFilters({
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50"
             >
               <option value="">Semua RT</option>
-              {rtOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+                {rtOptions.map((rt) => (
+                  <option key={rt} value={rt}>
+                    {rt}
+                  </option>
+                ))}
             </select>
           ) : (
             <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700">
@@ -152,11 +151,11 @@ export default function KeluargaFilters({
             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50"
           >
             <option value="">Semua status</option>
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
           </select>
         </div>
 

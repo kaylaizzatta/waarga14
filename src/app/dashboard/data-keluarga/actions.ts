@@ -1,68 +1,44 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSession } from '@/lib/session';
-import {
-  linkWargaToKeluarga,
-  unlinkWargaFromKeluarga,
-} from '@/lib/keluarga-service';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
 
-export async function submitLinkWargaToKeluarga(formData: FormData) {
-  const session = await getSession();
-  if (!session) {
-    return { success: false, error: 'Session tidak ditemukan.' };
+export async function deleteKeluarga(keluargaId: string) {
+  const supabase = createServerSupabaseClient();
+
+  // Pastikan keluarga benar-benar kosong
+  const { count } = await supabase
+    .from('warga-rw14')
+    .select('*', {
+      head: true,
+      count: 'exact',
+    })
+    .eq('keluarga_id', keluargaId);
+
+  if ((count ?? 0) > 0) {
+    return {
+      success: false,
+      error: 'Keluarga masih memiliki anggota.',
+    };
   }
 
-  const keluargaId = String(formData.get('keluargaId') ?? '');
-  const wargaId = Number(formData.get('wargaId') ?? 0);
-  const statusDalamKeluarga = String(
-    formData.get('statusDalamKeluarga') ?? ''
-  );
+  const { error } = await supabase
+    .from('keluarga')
+    .delete()
+    .eq('id', keluargaId);
 
-  if (!keluargaId) {
-    return { success: false, error: 'ID keluarga tidak valid.' };
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 
-  if (!wargaId || Number.isNaN(wargaId)) {
-    return { success: false, error: 'ID warga tidak valid.' };
-  }
+  revalidatePath('/dashboard/data-keluarga');
 
-  const result = await linkWargaToKeluarga(
-    keluargaId,
-    wargaId,
-    statusDalamKeluarga,
-    session
-  );
+  return {
+    success: true,
+  };
 
-  if (result.success) {
-    revalidatePath('/dashboard/data-keluarga');
-  }
-
-  return result;
-}
-
-export async function submitUnlinkWargaFromKeluarga(formData: FormData) {
-  const session = await getSession();
-  if (!session) {
-    return { success: false, error: 'Session tidak ditemukan.' };
-  }
-
-  const keluargaId = String(formData.get('keluargaId') ?? '');
-  const wargaId = Number(formData.get('wargaId') ?? 0);
-
-  if (!keluargaId) {
-    return { success: false, error: 'ID keluarga tidak valid.' };
-  }
-
-  if (!wargaId || Number.isNaN(wargaId)) {
-    return { success: false, error: 'ID warga tidak valid.' };
-  }
-
-  const result = await unlinkWargaFromKeluarga(keluargaId, wargaId, session);
-
-  if (result.success) {
-    revalidatePath('/dashboard/data-keluarga');
-  }
-
-  return result;
+  
 }

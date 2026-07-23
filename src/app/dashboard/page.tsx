@@ -634,10 +634,12 @@ function DemoCard({
 
 /** Donut Chart */
 function DonutChart({
+  size = 160,
   segments,
   centerValue,
   centerLabel,
 }: {
+  size?: number;
   segments: {
     value: number;
     color: string;
@@ -658,7 +660,13 @@ function DonutChart({
 
   return (
     <div className="flex justify-center">
-      <div className="relative w-40 h-40">
+      <div
+        className="relative"
+        style={{
+          width: size,
+          height: size,
+        }}
+      >
         <svg
           viewBox="0 0 120 120"
           className="w-full h-full -rotate-90"
@@ -698,11 +706,21 @@ function DonutChart({
         </svg>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-slate-900">
+          <span
+            className="font-black text-slate-900"
+            style={{
+              fontSize: size * 0.15,
+            }}
+          >
             {centerValue}
           </span>
 
-          <span className="text-xs text-slate-400">
+          <span
+            className="text-slate-400"
+            style={{
+              fontSize: size * 0.07,
+            }}
+          >
             {centerLabel}
           </span>
         </div>

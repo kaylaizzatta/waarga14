@@ -1,162 +1,27 @@
 'use client';
-
+import {
+  RT_OPTIONS,
+  JENIS_KELAMIN_OPTIONS,
+  AGAMA_OPTIONS,
+  STATUS_PERKAWINAN_OPTIONS,
+  STATUS_DALAM_KELUARGA_OPTIONS,
+  STATUS_KEPEMILIKAN_RUMAH_OPTIONS,
+  PENDIDIKAN_OPTIONS,
+  PEKERJAAN_OPTIONS,
+  STATUS_BANTUAN_OPTIONS,
+} from '@/lib/form-options';
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { tambahWargaAction } from '@/actions/warga';
+import SectionCard from '@/components/warga/form/SectionCard';
+import Field from '@/components/warga/form/Field';
+import Input, { inputCls } from '@/components/warga/form/Input';
+import Select from '@/components/warga/form/Select';
+import Opt from '@/components/warga/form/Opt';
+import { useState, useEffect } from "react";
+
 
 const V = '#6D5DFC';
-
-/* ── Primitives ──────────────────────────────────────────────────── */
-
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-slate-100">
-        <p className="text-[13px] font-semibold text-slate-700">{title}</p>
-      </div>
-      <div className="p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  required = false,
-  full = false,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  full?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={full ? 'sm:col-span-2' : ''}>
-      <label className="block text-[12px] font-semibold text-slate-600 tracking-wide mb-1.5">
-        {label}
-        {required && <span className="text-red-400 ml-0.5">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const inputCls =
-  'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 ' +
-  'placeholder:text-slate-400 bg-white ' +
-  'focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 ' +
-  'transition-colors';
-
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={inputCls} />;
-}
-
-function Select({
-  children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <div className="relative">
-      <select
-        {...props}
-        className={`${inputCls} appearance-none cursor-pointer pr-9`}
-      >
-        {children}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-        <svg
-          className="w-4 h-4 text-slate-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round"
-            d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function Opt({ items }: { items: string[] }) {
-  return (
-    <>
-      <option value="">— Pilih —</option>
-      {items.map((v) => (
-        <option key={v} value={v}>{v}</option>
-      ))}
-    </>
-  );
-}
-
-/* ── Options ─────────────────────────────────────────────────────── */
-
-const OPT = {
-  // Mengikuti kebutuhan administrasi jangka panjang, bukan hanya isi dataset saat ini
-  jenisKelamin: ['Laki-laki', 'Perempuan'],
-
-  agama: ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'],
-
-  statusPerkawinan: ['Belum Kawin', 'Kawin', 'Cerai Mati', 'Cerai Hidup'],
-
-  rt: ['RT 01', 'RT 02', 'RT 03', 'RT 04'],
-
-  statusKeluarga: [
-    'Kepala Keluarga',
-    'Istri',
-    'Anak',
-    'Menantu',
-    'Cucu',
-    'Orang Tua',
-    'Mertua',
-    'Famili Lain',
-    'Lainnya',
-  ],
-
-  // Kolom berikut harus persis sama dengan nilai di database
-  kepemilikanRumah: ['Milik Sendiri', 'Sewa', 'Kontrak'],
-
-  pendidikan: [
-    'Belum Sekolah',
-    'Belum Tamat SD',
-    'SD',
-    'SMP',
-    'SMA',
-    'D3',
-    'S1',
-  ],
-
-  pekerjaan: [
-    'Belum / Tidak Bekerja',
-    'Buruh Harian Lepas',
-    'Guru',
-    'Ibu Rumah Tangga',
-    'Karyawan Swasta',
-    'Mahasiswa',
-    'Pegawai BUMN',
-    'Pegawai Negeri Sipil (PNS)',
-    'Pelajar',
-    'Pensiunan',
-    'Sopir',
-    'Wiraswasta',
-  ],
-
-  bantuan: ['Ya', 'Tidak'],
-
-  bpjs: ['PPU', 'PBI', 'PBPU/Mandiri'],
-};
-
 /* ── Form ────────────────────────────────────────────────────────── */
 interface Props {
   role: 'RT' | 'RW';
@@ -171,6 +36,7 @@ export default function TambahWargaForm({
   const [state, formAction, isPending] = useActionState(
     tambahWargaAction,
     null
+  
   );
   return (
     <div className="space-y-6">
@@ -242,7 +108,7 @@ export default function TambahWargaForm({
 
           <Field label="Jenis Kelamin" required>
             <Select name="jenis_kelamin">
-              <Opt items={OPT.jenisKelamin} />
+              <Opt items={JENIS_KELAMIN_OPTIONS} />
             </Select>
           </Field>
 
@@ -258,13 +124,13 @@ export default function TambahWargaForm({
 
           <Field label="Agama" required>
             <Select name="agama">
-              <Opt items={OPT.agama} />
+              <Opt items={AGAMA_OPTIONS} />
             </Select>
           </Field>
 
           <Field label="Status Perkawinan" required>
             <Select name="status_perkawinan">
-              <Opt items={OPT.statusPerkawinan} />
+              <Opt items={STATUS_PERKAWINAN_OPTIONS} />
             </Select>
           </Field>
         </SectionCard>
@@ -274,7 +140,7 @@ export default function TambahWargaForm({
           <Field label="RT Domisili" required>
             {role === 'RW' ? (
               <Select name="asal_rt_domisili">
-                <Opt items={OPT.rt} />
+                <Opt items={RT_OPTIONS} />
               </Select>
             ) : (
               <>
@@ -299,7 +165,7 @@ export default function TambahWargaForm({
           */}
           <Field label="Status Dalam Keluarga" required>
             <Select name="status_dalam_keluarga">
-              <Opt items={OPT.statusKeluarga} />
+              <Opt items={STATUS_DALAM_KELUARGA_OPTIONS} />
             </Select>
           </Field>
 
@@ -314,7 +180,7 @@ export default function TambahWargaForm({
 
           <Field label="Status Kepemilikan Rumah" required>
             <Select name="status_kepemilikan_rumah">
-              <Opt items={OPT.kepemilikanRumah} />
+              <Opt items={STATUS_KEPEMILIKAN_RUMAH_OPTIONS} />
             </Select>
           </Field>
         </SectionCard>
@@ -323,25 +189,19 @@ export default function TambahWargaForm({
         <SectionCard title="Pendidikan & Sosial">
           <Field label="Pendidikan Terakhir" required>
             <Select name="tingkat_pendidikan_terakhir">
-              <Opt items={OPT.pendidikan} />
+              <Opt items={PENDIDIKAN_OPTIONS} />
             </Select>
           </Field>
 
           <Field label="Jenis Pekerjaan" required>
             <Select name="jenis_pekerjaan">
-              <Opt items={OPT.pekerjaan} />
+              <Opt items={PEKERJAAN_OPTIONS} />
             </Select>
           </Field>
 
           <Field label="Status Penerimaan Bantuan" required>
             <Select name="status_penerimaan_bantuan">
-              <Opt items={OPT.bantuan} />
-            </Select>
-          </Field>
-
-          <Field label="Jenis BPJS Kesehatan" required>
-            <Select name="jenis_bpjs_kesehatan">
-              <Opt items={OPT.bpjs} />
+              <Opt items={STATUS_BANTUAN_OPTIONS} />
             </Select>
           </Field>
         </SectionCard>

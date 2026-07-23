@@ -59,7 +59,9 @@ async function countByColumn(
     .select(column)
     .not(column, 'is', null);
 
-  if (rtFilter) query = query.eq('asal_rt_domisili', rtFilter);
+  if (rtFilter) {
+    query = query.eq('asal_rt_domisili', rtFilter);
+  }
 
   const { data, error } = await query;
 
@@ -68,11 +70,22 @@ async function countByColumn(
     return {};
   }
 
-  return (data as Record<string, string>[]).reduce((acc, row) => {
-    const val = (row[column] ?? '').trim();
-    if (val) acc[val] = (acc[val] ?? 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const result: Record<string, number> = {};
+  const rows = data as unknown[];
+
+  for (const row of rows) {
+    const value = (row as Record<string, unknown>)[column];
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+
+      if (trimmed) {
+        result[trimmed] = (result[trimmed] ?? 0) + 1;
+      }
+    }
+  }
+
+  return result;
 }
 
 /** Record<name,count> → ChartDataPoint[] terurut descending by value */

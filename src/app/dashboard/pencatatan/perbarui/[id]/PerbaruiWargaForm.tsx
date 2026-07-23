@@ -152,8 +152,6 @@ const OPT = {
   ],
 
   bantuan: ['Ya', 'Tidak'],
-
-  bpjs: ['PPU', 'PBI', 'PBPU/Mandiri'],
 };
 
 /* ── Props ───────────────────────────────────────────────────────── */
@@ -335,12 +333,6 @@ export default function PerbaruiWargaForm({warga, success,}: Props) {
             <Select name="status_penerimaan_bantuan"
               defaultValue={warga.status_penerimaan_bantuan}>
               <Opt items={OPT.bantuan} />
-            </Select>
-          </Field>
-
-          <Field label="Jenis BPJS Kesehatan" required>
-            <Select name="jenis_bpjs_kesehatan" defaultValue={warga.jenis_bpjs_kesehatan}>
-              <Opt items={OPT.bpjs} />
             </Select>
           </Field>
         </SectionCard>

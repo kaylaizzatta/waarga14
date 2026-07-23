@@ -1,6 +1,7 @@
 import { getSession } from '@/lib/session';
 import { mapUsernameToRT } from '@/lib/rt-utils';
 import {
+  getAvailableWarga,
   getDistinctKeluargaRTOptions,
   getDistinctKeluargaStatusOptions,
   getKeluargaList,
@@ -48,12 +49,19 @@ export default async function DataKeluargaPage({
     status: statusParam,
   };
 
-  const [summary, keluargaResult, rtOptions, statusOptions] = await Promise.all([
-    getKeluargaSummary(session),
-    getKeluargaList(session, filters, page),
-    getDistinctKeluargaRTOptions(session),
-    getDistinctKeluargaStatusOptions(session),
-  ]);
+  const [
+  summary,
+  keluargaResult,
+  rtOptions,
+  statusOptions,
+  availableWarga,
+] = await Promise.all([
+  getKeluargaSummary(session),
+  getKeluargaList(session, filters, page),
+  getDistinctKeluargaRTOptions(session),
+  getDistinctKeluargaStatusOptions(session),
+  getAvailableWarga(session),
+]);
 
   const rtLabel =
     session.role === 'RT' ? mapUsernameToRT(session.username) : '';
@@ -62,7 +70,8 @@ export default async function DataKeluargaPage({
     session.role === 'RW'
       ? 'Kelola dan pantau data keluarga seluruh RT di RW 14.'
       : `Kelola dan pantau data keluarga untuk ${rtLabel || 'RT Anda'}.`;
-
+  console.log(rtOptions);
+  console.log(statusOptions);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -88,7 +97,10 @@ export default async function DataKeluargaPage({
           />
         </div>
 
-        <KeluargaTable keluarga={keluargaResult.rows} />
+        <KeluargaTable
+          keluarga={keluargaResult.rows}
+          availableWarga={availableWarga}
+        />
 
         <div className="border-t border-slate-100 px-5 py-4">
           <KeluargaPagination

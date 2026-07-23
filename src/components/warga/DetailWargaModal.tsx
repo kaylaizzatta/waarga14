@@ -87,15 +87,6 @@ export function DetailWargaModal({ warga, onClose }: Props) {
 
             <div className="px-6 py-6 space-y-8">
 
-              {/* ── Jaminan Kesehatan ── */}
-              <Section title="Jaminan Kesehatan">
-                <Field
-                  label="Jenis BPJS Kesehatan"
-                  value={warga.jenis_bpjs_kesehatan}
-                  highlight
-                />
-              </Section>
-
               {/* ── Bantuan Sosial ── */}
               <Section title="Bantuan Sosial">
                 <Field

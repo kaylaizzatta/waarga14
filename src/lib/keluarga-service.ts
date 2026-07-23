@@ -13,11 +13,6 @@ function getSessionRT(session: UserSession): string {
   return normalizeRT(mapUsernameToRT(session.username));
 }
 
-function isAccessibleRT(session: UserSession, rt: string | null | undefined): boolean {
-  if (session.role === 'RW') return true;
-  return normalizeRT(rt) === getSessionRT(session);
-}
-
 /* =========================
    TYPES
 ========================= */
@@ -26,7 +21,6 @@ export interface KeluargaSummary {
   totalKeluarga: number;
   wargaTerhubung: number;
   wargaBelumTerhubung: number;
-  grupAmbigu: number;
 }
 
 export interface KeluargaAnggotaRow {
@@ -64,23 +58,12 @@ export interface KeluargaListResult {
   total: number;
 }
 
-export interface LinkableWargaRow {
+export interface AvailableWargaRow {
   id: number;
   nama: string;
-  asal_rt_domisili: string | null;
+  rt: string;
   alamat: string | null;
-  jenis_kelamin: string | null;
-  tahun_kelahiran: number | null;
   status_warga: string | null;
-  status_dalam_keluarga: string | null;
-  keluarga_id: string | null;
-}
-
-export interface LinkableWargaFilter {
-  search?: string;
-  rt?: string;
-  statusWarga?: string;
-  onlyUnlinked?: boolean;
 }
 
 /* =========================
@@ -104,7 +87,6 @@ export async function getKeluargaSummary(
       totalKeluarga: 0,
       wargaTerhubung: 0,
       wargaBelumTerhubung: 0,
-      grupAmbigu: 0,
     };
   }
 
@@ -128,7 +110,6 @@ export async function getKeluargaSummary(
       totalKeluarga,
       wargaTerhubung: 0,
       wargaBelumTerhubung: 0,
-      grupAmbigu: 0,
     };
   }
 
@@ -149,31 +130,10 @@ export async function getKeluargaSummary(
     (row) => row.keluarga_id === null
   ).length;
 
-  // 3) Grup ambigu (opsional)
-  let grupAmbigu = 0;
-
-  const { data: ambiguousRows, error: ambiguousError } = await supabase.rpc(
-    'get_ambiguous_family_groups'
-  );
-
-  // Function ini opsional → kalau belum ada / belum diberi permission,
-  // jangan bikin halaman error. Cukup fallback 0.
-  if (!ambiguousError && Array.isArray(ambiguousRows)) {
-    if (session.role === 'RW') {
-      grupAmbigu = ambiguousRows.length;
-    } else {
-      grupAmbigu = ambiguousRows.filter(
-        (row: { rt?: string | null }) =>
-          normalizeRT(row.rt) === sessionRT
-      ).length;
-    }
-  }
-
   return {
     totalKeluarga,
     wargaTerhubung,
     wargaBelumTerhubung,
-    grupAmbigu,
   };
 }
 
@@ -342,6 +302,7 @@ export async function getKeluargaList(
     console.error('[getKeluargaList:anggota]', anggotaError);
   }
 
+
   // 3) Map anggota per keluarga
   const anggotaMap = new Map<string, KeluargaAnggotaRow[]>();
 
@@ -380,23 +341,38 @@ export async function getKeluargaList(
 
   // 5) Bentuk row final
   let rows: KeluargaListRow[] = keluargaRows.map((keluarga) => {
-    const anggota = anggotaMap.get(keluarga.id) ?? [];
-
-    return {
-      id: keluarga.id,
-      nama_keluarga: keluarga.nama_keluarga,
-      kepala_keluarga_id: keluarga.kepala_keluarga_id,
-      kepala_keluarga_nama: keluarga.kepala_keluarga_id
-        ? kepalaMap.get(keluarga.kepala_keluarga_id) ?? null
-        : null,
-      rt: keluarga.rt,
-      alamat: keluarga.alamat,
-      status_keluarga: keluarga.status_keluarga,
-      jumlah_anggota: anggota.length,
-      created_at: keluarga.created_at,
-      anggota,
+  const anggota = (anggotaMap.get(keluarga.id) ?? []).sort((a, b) => {
+    const order: Record<string, number> = {
+      'Kepala Keluarga': 1,
+      Suami: 2,
+      Istri: 3,
+      Anak: 4,
+      'Orang Tua': 5,
+      Saudara: 6,
+      Lainnya: 7,
     };
+
+    const aOrder = order[a.status_dalam_keluarga ?? 'Lainnya'] ?? 999;
+    const bOrder = order[b.status_dalam_keluarga ?? 'Lainnya'] ?? 999;
+
+    return aOrder - bOrder;
   });
+
+  return {
+    id: keluarga.id,
+    nama_keluarga: keluarga.nama_keluarga,
+    kepala_keluarga_id: keluarga.kepala_keluarga_id,
+    kepala_keluarga_nama: keluarga.kepala_keluarga_id
+      ? kepalaMap.get(keluarga.kepala_keluarga_id) ?? null
+      : null,
+    rt: keluarga.rt,
+    alamat: keluarga.alamat,
+    status_keluarga: keluarga.status_keluarga,
+    jumlah_anggota: anggota.length,
+    created_at: keluarga.created_at,
+    anggota,
+  };
+});
 
   // 6) Filter anggota (1, 2-4, 5+)
   if (anggotaFilter.min !== undefined || anggotaFilter.max !== undefined) {
@@ -429,218 +405,41 @@ export async function getKeluargaList(
   };
 }
 
-/* =========================
-   LINKABLE WARGA
-========================= */
-
-export async function getLinkableWargaByKeluarga(
-  keluargaId: string,
-  session: UserSession,
-  params?: LinkableWargaFilter
-): Promise<LinkableWargaRow[]> {
+export async function getAvailableWarga(
+  session: UserSession
+): Promise<AvailableWargaRow[]> {
   const supabase = createServerSupabaseClient();
-
-  // validasi keluarga bisa diakses
-  const { data: keluarga, error: keluargaError } = await supabase
-    .from('keluarga')
-    .select('id, rt')
-    .eq('id', keluargaId)
-    .single();
-
-  if (keluargaError || !keluarga) {
-    console.error('[getLinkableWargaByKeluarga:keluarga]', keluargaError);
-    return [];
-  }
-
-  if (!isAccessibleRT(session, keluarga.rt)) {
-    return [];
-  }
-
-  const search = (params?.search ?? '').trim();
-  const rtFilter =
-    session.role === 'RT'
-      ? getSessionRT(session)
-      : normalizeRT(params?.rt);
-  const statusWarga = (params?.statusWarga ?? '').trim();
-  const onlyUnlinked = params?.onlyUnlinked ?? true;
 
   let query = supabase
     .from('warga-rw14')
-    .select(
-      `
+    .select(`
       id,
       nama,
       asal_rt_domisili,
       alamat,
-      jenis_kelamin,
-      tahun_kelahiran,
-      status_warga,
-      status_dalam_keluarga,
-      keluarga_id
-    `
-    )
+      status_warga
+    `)
     .eq('is_deleted', false)
+    .is('keluarga_id', null)
+    .eq('status_warga', 'Aktif')
     .order('nama', { ascending: true });
 
-  if (onlyUnlinked) {
-    query = query.is('keluarga_id', null);
-  }
-
-  if (rtFilter) {
-    query = query.eq('asal_rt_domisili', rtFilter);
-  }
-
-  if (statusWarga) {
-    query = query.eq('status_warga', statusWarga);
-  }
-
-  if (search) {
-    query = query.ilike('nama', `%${search}%`);
+  if (session.role === 'RT') {
+    query = query.eq('asal_rt_domisili', getSessionRT(session));
   }
 
   const { data, error } = await query;
 
   if (error || !data) {
-    console.error('[getLinkableWargaByKeluarga]', error);
+    console.error('[getAvailableWarga]', error);
     return [];
   }
 
   return data.map((row) => ({
     id: row.id,
     nama: row.nama,
-    asal_rt_domisili: row.asal_rt_domisili,
+    rt: row.asal_rt_domisili ?? '',
     alamat: row.alamat,
-    jenis_kelamin: row.jenis_kelamin,
-    tahun_kelahiran: row.tahun_kelahiran,
     status_warga: row.status_warga,
-    status_dalam_keluarga: row.status_dalam_keluarga,
-    keluarga_id: row.keluarga_id,
   }));
 }
-
-/* =========================
-   LINK / UNLINK
-========================= */
-
-export async function linkWargaToKeluarga(
-  keluargaId: string,
-  wargaId: number,
-  statusDalamKeluarga: string,
-  session: UserSession
-): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServerSupabaseClient();
-
-  // validasi keluarga target
-  const { data: keluarga, error: keluargaError } = await supabase
-    .from('keluarga')
-    .select('id, rt')
-    .eq('id', keluargaId)
-    .single();
-
-  if (keluargaError || !keluarga) {
-    return { success: false, error: 'Data keluarga tidak ditemukan.' };
-  }
-
-  if (!isAccessibleRT(session, keluarga.rt)) {
-    return { success: false, error: 'Anda tidak punya akses ke keluarga ini.' };
-  }
-
-  // validasi warga
-  const { data: warga, error: wargaError } = await supabase
-    .from('warga-rw14')
-    .select('id, keluarga_id, asal_rt_domisili, is_deleted')
-    .eq('id', wargaId)
-    .single();
-
-  if (wargaError || !warga) {
-    return { success: false, error: 'Data warga tidak ditemukan.' };
-  }
-
-  if (warga.is_deleted) {
-    return { success: false, error: 'Warga sudah dihapus dari data aktif.' };
-  }
-
-  if (!isAccessibleRT(session, warga.asal_rt_domisili)) {
-    return { success: false, error: 'Anda tidak punya akses ke warga ini.' };
-  }
-
-  if (warga.keluarga_id && warga.keluarga_id !== keluargaId) {
-    return {
-      success: false,
-      error: 'Warga ini sudah terhubung ke keluarga lain.',
-    };
-  }
-
-  const statusFinal = statusDalamKeluarga.trim();
-
-  const { error: updateError } = await supabase
-    .from('warga-rw14')
-    .update({
-      keluarga_id: keluargaId,
-      status_dalam_keluarga: statusFinal || null,
-    })
-    .eq('id', wargaId);
-
-  if (updateError) {
-    return { success: false, error: updateError.message };
-  }
-
-  return { success: true };
-}
-
-export async function unlinkWargaFromKeluarga(
-  keluargaId: string,
-  wargaId: number,
-  session: UserSession
-): Promise<{ success: boolean; error?: string }> {
-  const supabase = createServerSupabaseClient();
-
-  const { data: keluarga, error: keluargaError } = await supabase
-    .from('keluarga')
-    .select('id, rt')
-    .eq('id', keluargaId)
-    .single();
-
-  if (keluargaError || !keluarga) {
-    return { success: false, error: 'Data keluarga tidak ditemukan.' };
-  }
-
-  if (!isAccessibleRT(session, keluarga.rt)) {
-    return { success: false, error: 'Anda tidak punya akses ke keluarga ini.' };
-  }
-
-  const { data: warga, error: wargaError } = await supabase
-    .from('warga-rw14')
-    .select('id, keluarga_id, asal_rt_domisili')
-    .eq('id', wargaId)
-    .single();
-
-  if (wargaError || !warga) {
-    return { success: false, error: 'Data warga tidak ditemukan.' };
-  }
-
-  if (warga.keluarga_id !== keluargaId) {
-    return {
-      success: false,
-      error: 'Warga ini tidak terhubung ke keluarga tersebut.',
-    };
-  }
-
-  if (!isAccessibleRT(session, warga.asal_rt_domisili)) {
-    return { success: false, error: 'Anda tidak punya akses ke warga ini.' };
-  }
-
-  const { error: updateError } = await supabase
-    .from('warga-rw14')
-    .update({
-      keluarga_id: null,
-    })
-    .eq('id', wargaId);
-
-  if (updateError) {
-    return { success: false, error: updateError.message };
-  }
-
-  return { success: true };
-}
-

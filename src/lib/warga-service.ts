@@ -83,17 +83,26 @@ export function resolveRTFilter(session: UserSession, rtParam: string): string |
 
 async function getDistinctColumn(column: string): Promise<string[]> {
   const supabase = createServerSupabaseClient();
+
   const { data, error } = await supabase
     .from('warga-rw14')
     .select(column)
     .eq('is_deleted', false)
     .not(column, 'is', null);
 
-  if (error || !data) return [];
+  if (error || !data) {
+    return [];
+  }
 
-  const values = data
-    .map((r: Record<string, string>) => (r[column] ?? '').trim())
-    .filter(Boolean);
+  const values = (data as unknown[])
+    .map((row) => {
+      const value = (row as Record<string, unknown>)[column];
+
+      return typeof value === 'string'
+        ? value.trim()
+        : '';
+    })
+    .filter((value): value is string => value.length > 0);
 
   return [...new Set(values)].sort();
 }
